@@ -3,3 +3,6 @@ settings:
     apiVersion: 2.3
     languageVersion: 2.3
     progressiveMode: true
+    freeCompilerArgs: [
+      -XXLanguage:+ExplicitBackingFields
+    ]
