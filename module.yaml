@@ -1,0 +1,15 @@
+product:
+  type: lib
+  platforms:
+    - android
+    - js
+    - jvm
+    - linuxArm64
+    - linuxX64
+    - macosArm64
+    - macosX64
+    - mingwX64
+    - wasmJs
+
+apply:
+  - ./amper-kotlin.module-template.yaml
