@@ -1,12 +1,12 @@
 package io.anygogin31.vi.graph
 
-import io.anygogin31.vi.graph.nodes.FinishNode
+import io.anygogin31.vi.graph.nodes.NodeFinish
 
 public class Pipeline<Input, Output>(
     public override val name: String,
 ) : Graph<Input>(name) {
-    public val nodeFinish: FinishNode<Output> =
-        FinishNode(
+    public val nodeFinish: NodeFinish<Output> =
+        NodeFinish(
             graphName = name,
         )
 

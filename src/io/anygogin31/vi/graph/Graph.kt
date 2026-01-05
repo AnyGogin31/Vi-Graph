@@ -1,15 +1,15 @@
 package io.anygogin31.vi.graph
 
 import io.anygogin31.vi.graph.nodes.Node
-import io.anygogin31.vi.graph.nodes.StartNode
+import io.anygogin31.vi.graph.nodes.NodeStart
 import io.anygogin31.vi.graph.nodes.extensions.ResolvedEdge
 import io.anygogin31.vi.graph.nodes.extensions.resolveEdgeUnsafe
 
 public open class Graph<Input>(
     public open val name: String,
 ) {
-    public val nodeStart: StartNode<Input> =
-        StartNode(
+    public val nodeStart: NodeStart<Input> =
+        NodeStart(
             graphName = name,
         )
 
