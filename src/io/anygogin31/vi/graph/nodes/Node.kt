@@ -1,11 +1,12 @@
 package io.anygogin31.vi.graph.nodes
 
+import io.anygogin31.vi.graph.ExecutionResult
 import io.anygogin31.vi.graph.edges.Edge
 import io.anygogin31.vi.graph.edges.extensions.EdgeList
 
-public abstract class Node<Input, Output> protected constructor(
-    public val name: String,
-) {
+public abstract class Node<Input, Output> internal constructor() {
+    public abstract val name: CharSequence
+
     public val id: NodeId
         get() = NodeId.invoke(name)
 
@@ -18,10 +19,10 @@ public abstract class Node<Input, Output> protected constructor(
         )
     }
 
-    public abstract suspend fun execute(input: Input): Result<Output>
+    public abstract suspend fun execute(input: Input): ExecutionResult<Output>
 
     @Suppress("UNCHECKED_CAST")
-    public suspend fun executeUnsafe(input: Any?): Result<Output> =
+    public suspend fun executeUnsafe(input: Any?): ExecutionResult<Output> =
         execute(
             input = input as Input,
         )

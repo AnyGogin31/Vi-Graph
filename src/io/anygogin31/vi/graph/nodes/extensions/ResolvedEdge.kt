@@ -14,7 +14,11 @@ public suspend fun <Input, Output> Node<Input, Output>.resolveEdge(output: Outpu
         ?.let { edge: Edge<Output, *> ->
             ResolvedEdge(
                 edge = edge,
-                output = edge.transform.invoke(output),
+                output =
+                    edge
+                        .transform
+                        .invoke(output)
+                        .getOrNull(),
             )
         }
 

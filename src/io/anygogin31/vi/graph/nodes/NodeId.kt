@@ -11,6 +11,6 @@ public value class NodeId private constructor(
 
         private const val SEPARATOR: Char = '$'
 
-        public operator fun invoke(name: String): NodeId = NodeId(PREFIX + SEPARATOR + name)
+        public operator fun invoke(name: CharSequence): NodeId = NodeId(PREFIX + SEPARATOR + name)
     }
 }

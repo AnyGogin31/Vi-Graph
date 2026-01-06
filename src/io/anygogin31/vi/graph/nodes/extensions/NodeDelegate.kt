@@ -1,32 +1,27 @@
 package io.anygogin31.vi.graph.nodes.extensions
 
+import io.anygogin31.vi.graph.ExecutionResult
 import io.anygogin31.vi.graph.Graph
 import io.anygogin31.vi.graph.nodes.Node
+import kotlin.properties.ReadOnlyProperty
 import kotlin.reflect.KProperty
 
-public class NodeDelegate<Input, Output>(
-    private val name: String,
-    private val graphName: String,
-    private val execute: suspend (input: Input) -> Output,
-) {
-    public operator fun getValue(
-        thisRef: Any?,
-        property: KProperty<*>,
-    ): Node<Input, Output> =
-        object : Node<Input, Output>(name + NAME_SEPARATOR + graphName) {
-            public override suspend fun execute(input: Input): Result<Output> =
-                runCatching {
-                    this@NodeDelegate.execute(input)
-                }
-        }
-}
+private typealias NodeDelegate<Input, Output> = ReadOnlyProperty<Any?, Node<Input, Output>>
 
-public inline fun <reified Input, reified Output> Graph<*>.node(
-    name: String,
-    noinline execute: suspend (input: Input) -> Output,
+public fun <Input, Output> Graph<*>.node(
+    name: String? = null,
+    execute: suspend (input: Input) -> ExecutionResult<Output>,
 ): NodeDelegate<Input, Output> =
-    NodeDelegate(
-        name = name,
-        graphName = this.name,
-        execute = execute,
-    )
+    NodeDelegate { _, property: KProperty<*> ->
+        object : Node<Input, Output>() {
+            public override val name: CharSequence =
+                (name ?: property.name) +
+                    NAME_SEPARATOR +
+                    this@node.name
+
+            public override suspend fun execute(input: Input): ExecutionResult<Output> =
+                execute.invoke(
+                    input,
+                )
+        }
+    }

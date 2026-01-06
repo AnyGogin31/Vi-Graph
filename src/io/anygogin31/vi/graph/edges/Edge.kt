@@ -1,10 +1,14 @@
 package io.anygogin31.vi.graph.edges
 
+import io.anygogin31.vi.graph.ExecutionResult
 import io.anygogin31.vi.graph.nodes.Node
 
+private typealias NodeFrom<Source> = Node<*, Source>
+private typealias NodeTo<Source, Target> = Node<Source, Target>
+
 public class Edge<Source, Target> private constructor(
-    public val from: Node<Source, *>,
-    public val to: Node<*, Target>,
+    public val nodeFrom: NodeFrom<Source>,
+    public val nodeTo: NodeTo<Source, Target>,
 ) {
     public var condition: suspend (source: Source) -> Boolean =
         { true }
@@ -15,20 +19,20 @@ public class Edge<Source, Target> private constructor(
             condition = block
         }
 
-    public var transform: suspend (source: Source) -> Result<Target> =
-        { to.executeUnsafe(it) }
+    public var transform: suspend (source: Source) -> ExecutionResult<Target> =
+        { nodeTo.execute(it) }
         private set
 
-    public infix fun transformed(block: suspend (source: Source) -> Result<Target>): Edge<Source, Target> =
+    public infix fun transformed(block: suspend (source: Source) -> ExecutionResult<Target>): Edge<Source, Target> =
         this.apply {
             transform = block
         }
 
     public companion object {
-        public infix fun <Source, Target> Node<Source, *>.forwardTo(to: Node<*, Target>): Edge<Source, Target> =
+        public infix fun <Source, Target> NodeFrom<Source>.forwardTo(to: NodeTo<Source, Target>): Edge<Source, Target> =
             Edge(
-                from = this,
-                to = to,
+                nodeFrom = this,
+                nodeTo = to,
             )
     }
 }
