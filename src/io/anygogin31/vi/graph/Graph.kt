@@ -16,7 +16,10 @@ public interface Graph<Input> {
     ): ExecutionResult<*>
 }
 
-public fun <Input> graph(name: String): Graph<Input> =
+public fun <Input> graph(
+    name: String,
+    block: Graph<Input>.() -> Unit = {},
+): Graph<Input> =
     object : Graph<Input> {
         public override val name: CharSequence = name
 
@@ -53,4 +56,4 @@ public fun <Input> graph(name: String): Graph<Input> =
 
             return ExecutionResult.success(currentInput)
         }
-    }
+    }.apply(block)

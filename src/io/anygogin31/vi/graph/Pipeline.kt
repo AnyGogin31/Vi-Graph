@@ -12,7 +12,10 @@ public interface Pipeline<Input, Output : Any> : Graph<Input> {
     ): ExecutionResult<Output>
 }
 
-public fun <Input, Output : Any> pipline(name: String): Pipeline<Input, Output> {
+public fun <Input, Output : Any> pipline(
+    name: String,
+    block: Pipeline<Input, Output>.() -> Unit = {},
+): Pipeline<Input, Output> {
     val graphDelegate: Graph<Input> = graph(name)
     return object : Pipeline<Input, Output>, Graph<Input> by graphDelegate {
         public override val name: CharSequence = name
@@ -29,5 +32,5 @@ public fun <Input, Output : Any> pipline(name: String): Pipeline<Input, Output> 
                     input = input,
                     strategy = strategy,
                 ).map { it as Output }
-    }
+    }.apply(block)
 }
