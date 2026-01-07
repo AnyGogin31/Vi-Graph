@@ -27,7 +27,7 @@ public value class NodeId private constructor(
     public companion object {
         private const val PREFIX: String = "@node"
 
-        private const val SEPARATOR: Char = '$'
+        private const val SEPARATOR: Char = ':'
 
         public operator fun invoke(name: CharSequence): NodeId = NodeId(PREFIX + SEPARATOR + name)
     }

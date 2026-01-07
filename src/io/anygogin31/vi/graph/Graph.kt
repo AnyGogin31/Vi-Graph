@@ -40,7 +40,7 @@ public fun <Input> graph(
     block: Graph<Input>.() -> Unit = {},
 ): Graph<Input> =
     object : Graph<Input> {
-        public override val name: CharSequence = name
+        public override val name: CharSequence = "@graph:$name"
 
         public override val nodeStart: Node<Input, Input> = nodeStartOf()
 

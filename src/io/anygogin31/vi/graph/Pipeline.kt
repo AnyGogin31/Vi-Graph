@@ -36,7 +36,7 @@ public fun <Input, Output : Any> pipline(
 ): Pipeline<Input, Output> {
     val graphDelegate: Graph<Input> = graph(name)
     return object : Pipeline<Input, Output>, Graph<Input> by graphDelegate {
-        public override val name: CharSequence = name
+        public override val name: CharSequence = "@pipline:$name"
 
         public override val nodeFinish: Node<Output, Output> = nodeFinishOf()
 

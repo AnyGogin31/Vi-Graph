@@ -46,6 +46,6 @@ public abstract class Node<Input, Output> internal constructor() {
         )
 
     protected companion object {
-        public const val NAME_SEPARATOR = ':'
+        public const val NAME_SEPARATOR = '/'
     }
 }
