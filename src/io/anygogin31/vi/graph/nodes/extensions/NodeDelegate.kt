@@ -30,16 +30,28 @@ public fun <Input, Output> Graph<*>.node(
     name: String? = null,
     execute: suspend (input: Input) -> ExecutionResult<Output>,
 ): NodeDelegate<Input, Output> =
-    NodeDelegate { _, property: KProperty<*> ->
-        object : Node<Input, Output>() {
-            public override val name: CharSequence =
-                (name ?: property.name) +
-                    NAME_SEPARATOR +
-                    this@node.name
+    object : NodeDelegate<Input, Output> {
+        private var instance: Node<Input, Output>? = null
 
-            public override suspend fun execute(input: Input): ExecutionResult<Output> =
-                execute.invoke(
-                    input,
-                )
+        public override fun getValue(
+            thisRef: Any?,
+            property: KProperty<*>,
+        ): Node<Input, Output> {
+            instance?.let { return it }
+
+            instance =
+                object : Node<Input, Output>() {
+                    public override val name: CharSequence =
+                        (name ?: property.name) +
+                            NAME_SEPARATOR +
+                            this@node.name
+
+                    public override suspend fun execute(input: Input): ExecutionResult<Output> =
+                        execute.invoke(
+                            input,
+                        )
+                }
+
+            return instance!!
         }
     }
