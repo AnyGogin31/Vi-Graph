@@ -18,7 +18,7 @@
 
 package io.anygogin31.vi.graph.exceptions
 
-public class NodeExecutionException(
+public class NodeExecutionException internal constructor(
     name: CharSequence,
     cause: Throwable,
 ) : GraphException(

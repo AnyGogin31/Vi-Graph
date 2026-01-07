@@ -13,3 +13,6 @@ product:
 
 apply:
   - ./amper-kotlin.module-template.yaml
+
+dependencies:
+  - $libs.kotlin.coroutines

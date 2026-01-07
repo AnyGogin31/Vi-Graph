@@ -18,6 +18,13 @@
 
 package io.anygogin31.vi.graph
 
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
+
 public sealed interface ExecutionStrategy {
+    public data class Parallel(
+        public val dispatcher: CoroutineDispatcher = Dispatchers.Default,
+    ) : ExecutionStrategy
+
     public data object Sequential : ExecutionStrategy
 }

@@ -26,10 +26,10 @@ public data class ResolvedEdge(
     public val output: Any?,
 )
 
-public suspend fun <Input, Output> Node<Input, Output>.resolveEdge(output: Output): ResolvedEdge? =
+public suspend fun <Input, Output> Node<Input, Output>.resolveEdges(output: Output): List<ResolvedEdge> =
     edges
-        .find { edge: Edge<Output, *> -> edge.condition.invoke(output) }
-        ?.let { edge: Edge<Output, *> ->
+        .filter { edge: Edge<Output, *> -> edge.condition.invoke(output) }
+        .map { edge: Edge<Output, *> ->
             ResolvedEdge(
                 edge = edge,
                 output =
@@ -41,7 +41,7 @@ public suspend fun <Input, Output> Node<Input, Output>.resolveEdge(output: Outpu
         }
 
 @Suppress("UNCHECKED_CAST")
-public suspend fun <Input, Output> Node<Input, Output>.resolveEdgeUnsafe(output: Any?): ResolvedEdge? =
-    resolveEdge(
+public suspend fun <Input, Output> Node<Input, Output>.resolveEdgesUnsafe(output: Any?): List<ResolvedEdge> =
+    resolveEdges(
         output = output as Output,
     )

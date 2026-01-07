@@ -18,11 +18,18 @@
 
 package io.anygogin31.vi.graph
 
+import io.anygogin31.vi.graph.exceptions.GraphExecutionException
 import io.anygogin31.vi.graph.exceptions.NodeExecutionException
 import io.anygogin31.vi.graph.nodes.Node
 import io.anygogin31.vi.graph.nodes.extensions.ResolvedEdge
-import io.anygogin31.vi.graph.nodes.extensions.resolveEdgeUnsafe
+import io.anygogin31.vi.graph.nodes.extensions.resolveEdgesUnsafe
 import io.anygogin31.vi.graph.nodes.nodeStartOf
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.cancelChildren
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.getOrElse
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 
 public interface Graph<Input> {
     public val name: CharSequence
@@ -49,7 +56,82 @@ public fun <Input> graph(
             strategy: ExecutionStrategy,
         ): ExecutionResult<*> =
             when (strategy) {
+                is ExecutionStrategy.Parallel ->
+                    executeParallel(
+                        input = input,
+                        dispatcher = strategy.dispatcher,
+                    )
+
                 is ExecutionStrategy.Sequential -> executeSequential(input)
+            }
+
+        private suspend fun <Input> executeParallel(
+            input: Input,
+            dispatcher: CoroutineDispatcher,
+        ): ExecutionResult<*> =
+            coroutineScope {
+                val resultChannel: Channel<ExecutionResult<*>> =
+                    Channel(
+                        capacity = Channel.RENDEZVOUS,
+                    )
+
+                suspend fun processNode(
+                    currentNode: Node<*, *>,
+                    currentInput: Any?,
+                ): Unit =
+                    coroutineScope {
+                        val nodeOutput: Any? =
+                            currentNode
+                                .executeUnsafe(currentInput)
+                                .getOrElse { exception: Throwable ->
+                                    return@coroutineScope resultChannel.send(
+                                        ExecutionResult.failure<Any?>(
+                                            NodeExecutionException(
+                                                name = currentNode.name,
+                                                cause = exception,
+                                            ),
+                                        ),
+                                    )
+                                }
+
+                        currentNode
+                            .resolveEdgesUnsafe(nodeOutput)
+                            .ifEmpty {
+                                return@coroutineScope resultChannel.send(
+                                    ExecutionResult.success(
+                                        value = nodeOutput,
+                                    ),
+                                )
+                            }.forEach { resolvedEdge: ResolvedEdge ->
+                                launch(dispatcher) {
+                                    processNode(
+                                        resolvedEdge.edge.nodeTo,
+                                        resolvedEdge.output,
+                                    )
+                                }
+                            }
+                    }
+
+                launch(dispatcher) {
+                    processNode(
+                        currentNode = nodeStart,
+                        currentInput = input,
+                    )
+                }
+
+                resultChannel
+                    .receiveCatching()
+                    .getOrElse { exception: Throwable? ->
+                        return@coroutineScope ExecutionResult.failure<Any?>(
+                            GraphExecutionException(
+                                name = name,
+                                cause = exception,
+                            ),
+                        )
+                    }.also {
+                        coroutineContext.cancelChildren()
+                        resultChannel.close()
+                    }
             }
 
         private suspend fun <Input> executeSequential(input: Input): ExecutionResult<*> {
@@ -71,7 +153,8 @@ public fun <Input> graph(
 
                 val resolvedEdge: ResolvedEdge =
                     currentNode
-                        .resolveEdgeUnsafe(nodeOutput)
+                        .resolveEdgesUnsafe(nodeOutput)
+                        .firstOrNull()
                         ?: break
 
                 currentNode = resolvedEdge.edge.nodeTo

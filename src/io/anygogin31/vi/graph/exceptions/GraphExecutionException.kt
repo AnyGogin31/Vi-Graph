@@ -18,7 +18,15 @@
 
 package io.anygogin31.vi.graph.exceptions
 
-public sealed class GraphException protected constructor(
-    message: String,
-    cause: Throwable? = null,
-) : RuntimeException(message, cause)
+public class GraphExecutionException internal constructor(
+    name: CharSequence,
+    cause: Throwable?,
+) : GraphException(
+        message =
+            "Error executing graph '$name'" +
+                cause
+                    ?.message
+                    ?.let { ": $it" }
+                    .orEmpty(),
+        cause = cause,
+    )
