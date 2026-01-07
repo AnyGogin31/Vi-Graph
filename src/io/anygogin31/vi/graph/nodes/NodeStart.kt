@@ -31,7 +31,7 @@ internal fun <Input> Graph<Input>.nodeStartOf(): Node<Input, Input> =
                 this@nodeStartOf.name
 
         public override suspend fun execute(input: Input): ExecutionResult<Input> =
-            Result.success(
+            ExecutionResult.success(
                 value = input,
             )
     }
