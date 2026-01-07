@@ -18,7 +18,7 @@
 
 package io.anygogin31.vi.graph.edges
 
-import io.anygogin31.vi.graph.ExecutionResult
+import io.anygogin31.vi.graph.executions.ExecutionResult
 import io.anygogin31.vi.graph.nodes.Node
 
 private typealias NodeFrom<Source> = Node<*, Source>

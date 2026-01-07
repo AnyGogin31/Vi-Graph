@@ -18,8 +18,8 @@
 
 package io.anygogin31.vi.graph.nodes.extensions
 
-import io.anygogin31.vi.graph.ExecutionResult
 import io.anygogin31.vi.graph.Graph
+import io.anygogin31.vi.graph.executions.ExecutionResult
 import io.anygogin31.vi.graph.nodes.Node
 import kotlin.properties.ReadOnlyProperty
 import kotlin.reflect.KProperty

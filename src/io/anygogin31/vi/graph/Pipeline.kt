@@ -18,6 +18,8 @@
 
 package io.anygogin31.vi.graph
 
+import io.anygogin31.vi.graph.executions.ExecutionResult
+import io.anygogin31.vi.graph.executions.ExecutionStrategy
 import io.anygogin31.vi.graph.nodes.Node
 import io.anygogin31.vi.graph.nodes.nodeFinishOf
 

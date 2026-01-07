@@ -18,10 +18,10 @@
 
 package io.anygogin31.vi.graph.nodes
 
-import io.anygogin31.vi.graph.ExecutionResult
 import io.anygogin31.vi.graph.Graph
 import io.anygogin31.vi.graph.edges.Edge
 import io.anygogin31.vi.graph.exceptions.GraphConfigurationException
+import io.anygogin31.vi.graph.executions.ExecutionResult
 
 private const val FINISH_NODE_PREFIX: String = "__finish__"
 

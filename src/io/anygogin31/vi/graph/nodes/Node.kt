@@ -18,9 +18,9 @@
 
 package io.anygogin31.vi.graph.nodes
 
-import io.anygogin31.vi.graph.ExecutionResult
 import io.anygogin31.vi.graph.edges.Edge
 import io.anygogin31.vi.graph.edges.extensions.EdgeList
+import io.anygogin31.vi.graph.executions.ExecutionResult
 
 public abstract class Node<Input, Output> internal constructor() {
     public abstract val name: CharSequence

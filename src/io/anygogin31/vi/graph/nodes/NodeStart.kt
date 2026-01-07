@@ -18,8 +18,8 @@
 
 package io.anygogin31.vi.graph.nodes
 
-import io.anygogin31.vi.graph.ExecutionResult
 import io.anygogin31.vi.graph.Graph
+import io.anygogin31.vi.graph.executions.ExecutionResult
 
 private const val START_NODE_PREFIX: String = "__start__"
 

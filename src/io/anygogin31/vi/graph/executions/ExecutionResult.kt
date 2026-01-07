@@ -16,6 +16,6 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package io.anygogin31.vi.graph
+package io.anygogin31.vi.graph.executions
 
 public typealias ExecutionResult<Output> = Result<Output>

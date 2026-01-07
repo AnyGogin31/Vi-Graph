@@ -18,18 +18,10 @@
 
 package io.anygogin31.vi.graph
 
-import io.anygogin31.vi.graph.exceptions.GraphExecutionException
-import io.anygogin31.vi.graph.exceptions.NodeExecutionException
+import io.anygogin31.vi.graph.executions.ExecutionResult
+import io.anygogin31.vi.graph.executions.ExecutionStrategy
 import io.anygogin31.vi.graph.nodes.Node
-import io.anygogin31.vi.graph.nodes.extensions.ResolvedEdge
-import io.anygogin31.vi.graph.nodes.extensions.resolveEdgesUnsafe
 import io.anygogin31.vi.graph.nodes.nodeStartOf
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.cancelChildren
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.getOrElse
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.launch
 
 public interface Graph<Input> {
     public val name: CharSequence
@@ -57,110 +49,18 @@ public fun <Input> graph(
         ): ExecutionResult<*> =
             when (strategy) {
                 is ExecutionStrategy.Parallel ->
-                    executeParallel(
-                        input = input,
-                        dispatcher = strategy.dispatcher,
-                    )
-
-                is ExecutionStrategy.Sequential -> executeSequential(input)
-            }
-
-        private suspend fun <Input> executeParallel(
-            input: Input,
-            dispatcher: CoroutineDispatcher,
-        ): ExecutionResult<*> =
-            coroutineScope {
-                val resultChannel: Channel<ExecutionResult<*>> =
-                    Channel(
-                        capacity = Channel.RENDEZVOUS,
-                    )
-
-                suspend fun processNode(
-                    currentNode: Node<*, *>,
-                    currentInput: Any?,
-                ): Unit =
-                    coroutineScope {
-                        val nodeOutput: Any? =
-                            currentNode
-                                .executeUnsafe(currentInput)
-                                .getOrElse { exception: Throwable ->
-                                    return@coroutineScope resultChannel.send(
-                                        ExecutionResult.failure<Any?>(
-                                            NodeExecutionException(
-                                                name = currentNode.name,
-                                                cause = exception,
-                                            ),
-                                        ),
-                                    )
-                                }
-
-                        currentNode
-                            .resolveEdgesUnsafe(nodeOutput)
-                            .ifEmpty {
-                                return@coroutineScope resultChannel.send(
-                                    ExecutionResult.success(
-                                        value = nodeOutput,
-                                    ),
-                                )
-                            }.forEach { resolvedEdge: ResolvedEdge ->
-                                launch(dispatcher) {
-                                    processNode(
-                                        resolvedEdge.edge.nodeTo,
-                                        resolvedEdge.output,
-                                    )
-                                }
-                            }
-                    }
-
-                launch(dispatcher) {
-                    processNode(
-                        currentNode = nodeStart,
-                        currentInput = input,
-                    )
-                }
-
-                resultChannel
-                    .receiveCatching()
-                    .getOrElse { exception: Throwable? ->
-                        return@coroutineScope ExecutionResult.failure<Any?>(
-                            GraphExecutionException(
-                                name = name,
-                                cause = exception,
-                            ),
+                    strategy.run {
+                        executeParallel(
+                            input = input,
+                            dispatcher = strategy.dispatcher,
                         )
-                    }.also {
-                        coroutineContext.cancelChildren()
-                        resultChannel.close()
+                    }
+
+                is ExecutionStrategy.Sequential ->
+                    strategy.run {
+                        executeSequential(
+                            input = input,
+                        )
                     }
             }
-
-        private suspend fun <Input> executeSequential(input: Input): ExecutionResult<*> {
-            var currentNode: Node<*, *> = nodeStart
-            var currentInput: Any? = input
-
-            while (currentInput != null) {
-                val nodeOutput: Any? =
-                    currentNode
-                        .executeUnsafe(currentInput)
-                        .getOrElse { exception: Throwable ->
-                            return ExecutionResult.failure<Any?>(
-                                NodeExecutionException(
-                                    name = currentNode.name,
-                                    cause = exception,
-                                ),
-                            )
-                        }
-
-                val resolvedEdge: ResolvedEdge =
-                    currentNode
-                        .resolveEdgesUnsafe(nodeOutput)
-                        .firstOrNull()
-                        ?: break
-
-                currentNode = resolvedEdge.edge.nodeTo
-                currentInput = resolvedEdge.output
-            }
-
-            return ExecutionResult.success(currentInput)
-        }
     }.apply(block)
