@@ -18,6 +18,7 @@
 
 package io.anygogin31.vi.graph
 
+import io.anygogin31.vi.graph.exceptions.NodeExecutionException
 import io.anygogin31.vi.graph.nodes.Node
 import io.anygogin31.vi.graph.nodes.extensions.ResolvedEdge
 import io.anygogin31.vi.graph.nodes.extensions.resolveEdgeUnsafe
@@ -60,7 +61,12 @@ public fun <Input> graph(
                     currentNode
                         .executeUnsafe(currentInput)
                         .getOrElse { exception: Throwable ->
-                            return ExecutionResult.failure<Any?>(exception)
+                            return ExecutionResult.failure<Any?>(
+                                NodeExecutionException(
+                                    name = currentNode.name,
+                                    cause = exception,
+                                ),
+                            )
                         }
 
                 val resolvedEdge: ResolvedEdge =

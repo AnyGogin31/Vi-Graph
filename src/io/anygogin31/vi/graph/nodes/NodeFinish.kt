@@ -21,6 +21,7 @@ package io.anygogin31.vi.graph.nodes
 import io.anygogin31.vi.graph.ExecutionResult
 import io.anygogin31.vi.graph.Graph
 import io.anygogin31.vi.graph.edges.Edge
+import io.anygogin31.vi.graph.exceptions.GraphConfigurationException
 
 private const val FINISH_NODE_PREFIX: String = "__finish__"
 
@@ -32,12 +33,12 @@ internal fun <Output> Graph<*>.nodeFinishOf(): Node<Output, Output> =
                 this@nodeFinishOf.name
 
         public override suspend fun execute(input: Output): ExecutionResult<Output> =
-            ExecutionResult.failure(
-                exception = IllegalStateException("Reached terminal node $name"),
+            ExecutionResult.success(
+                value = input,
             )
 
         public override fun addEdge(edge: Edge<Output, *>): Unit =
-            error(
-                message = "${this::class.simpleName} cannot have outgoing edges",
+            throw GraphConfigurationException(
+                message = "${this::class.simpleName} ($name) cannot have outgoing edges",
             )
     }
