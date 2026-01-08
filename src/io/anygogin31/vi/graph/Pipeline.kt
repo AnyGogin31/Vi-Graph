@@ -26,24 +26,24 @@ import io.anygogin31.vi.graph.nodes.nodeFinishOf
 public interface Pipeline<Input, Output : Any> : Graph<Input> {
     public val nodeFinish: Node<Output, Output>
 
-    public override suspend fun <Input> execute(
+    public override suspend fun execute(
         input: Input,
         strategy: ExecutionStrategy,
     ): ExecutionResult<Output>
 }
 
-public fun <Input, Output : Any> pipline(
+public fun <Input, Output : Any> pipeline(
     name: String,
     block: Pipeline<Input, Output>.() -> Unit = {},
 ): Pipeline<Input, Output> {
     val graphDelegate: Graph<Input> = graph(name)
     return object : Pipeline<Input, Output>, Graph<Input> by graphDelegate {
-        public override val name: CharSequence = "@pipline:$name"
+        public override val name: CharSequence = "@pipeline:$name"
 
         public override val nodeFinish: Node<Output, Output> = nodeFinishOf()
 
         @Suppress("UNCHECKED_CAST")
-        public override suspend fun <Input> execute(
+        public override suspend fun execute(
             input: Input,
             strategy: ExecutionStrategy,
         ): ExecutionResult<Output> =

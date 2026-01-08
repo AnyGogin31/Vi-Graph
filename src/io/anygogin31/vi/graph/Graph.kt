@@ -28,7 +28,7 @@ public interface Graph<Input> {
 
     public val nodeStart: Node<Input, Input>
 
-    public suspend fun <Input> execute(
+    public suspend fun execute(
         input: Input,
         strategy: ExecutionStrategy = ExecutionStrategy.Sequential,
     ): ExecutionResult<*>
@@ -43,7 +43,7 @@ public fun <Input> graph(
 
         public override val nodeStart: Node<Input, Input> = nodeStartOf()
 
-        public override suspend fun <Input> execute(
+        public override suspend fun execute(
             input: Input,
             strategy: ExecutionStrategy,
         ): ExecutionResult<*> =

@@ -16,12 +16,15 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package io.anygogin31.vi.graph.nodes.extensions
+package io.anygogin31.vi.graph.utils
 
-import io.anygogin31.vi.graph.Graph
-import io.anygogin31.vi.graph.edges.Edge
+import kotlin.properties.ReadOnlyProperty
+import kotlin.reflect.KProperty
 
-public fun <Source, Target> Graph<*>.edge(edge: Edge<Source, Target>): Unit =
-    edge
-        .nodeFrom
-        .addEdge(edge)
+internal fun <T> Lazy<T>.asProperty(): ReadOnlyProperty<Any?, T> =
+    ReadOnlyProperty { thisRef: Any?, property: KProperty<*> ->
+        getValue(
+            thisRef = thisRef,
+            property = property,
+        )
+    }
