@@ -19,33 +19,25 @@
 package io.anygogin31.vi.graph.nodes
 
 import io.anygogin31.vi.graph.edges.Edge
-import io.anygogin31.vi.graph.edges.extensions.EdgeList
-import io.anygogin31.vi.graph.executions.ExecutionResult
 
-public abstract class Node<Input, Output> internal constructor() {
-    public abstract val name: CharSequence
+public abstract class Node<Input, Output>
+    internal constructor() {
+        public abstract val name: CharSequence
 
-    public val id: NodeId
-        get() = NodeId.invoke(name)
+        public val edges: List<Edge<Output, *>>
+            field = mutableListOf()
 
-    public val edges: EdgeList<Output, *>
-        field = mutableListOf()
+        internal open fun addEdge(edge: Edge<Output, *>) {
+            edges.add(
+                element = edge,
+            )
+        }
 
-    public open fun addEdge(edge: Edge<Output, *>) {
-        edges.add(
-            element = edge,
-        )
+        public abstract suspend fun execute(input: Input): Result<Output>
+
+        @Suppress("UNCHECKED_CAST")
+        public suspend fun executeUnsafe(input: Any?): Result<Output> =
+            execute(
+                input = input as Input,
+            )
     }
-
-    public abstract suspend fun execute(input: Input): ExecutionResult<Output>
-
-    @Suppress("UNCHECKED_CAST")
-    public suspend fun executeUnsafe(input: Any?): ExecutionResult<Output> =
-        execute(
-            input = input as Input,
-        )
-
-    protected companion object {
-        public const val NAME_SEPARATOR = '/'
-    }
-}

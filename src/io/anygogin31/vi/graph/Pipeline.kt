@@ -18,39 +18,63 @@
 
 package io.anygogin31.vi.graph
 
-import io.anygogin31.vi.graph.executions.ExecutionResult
-import io.anygogin31.vi.graph.executions.ExecutionStrategy
+import io.anygogin31.vi.graph.edges.Edge
+import io.anygogin31.vi.graph.exceptions.GraphConfigurationException
 import io.anygogin31.vi.graph.nodes.Node
-import io.anygogin31.vi.graph.nodes.nodeFinishOf
+import io.anygogin31.vi.graph.strategies.ExecutionStrategy
 
-public interface Pipeline<Input, Output : Any> : Graph<Input> {
-    public val nodeFinish: Node<Output, Output>
-
+public interface Pipeline<Input, Output> : Graph<Input> {
     public override suspend fun execute(
         input: Input,
         strategy: ExecutionStrategy,
-    ): ExecutionResult<Output>
+    ): Result<*>
 }
 
-public fun <Input, Output : Any> pipeline(
-    name: String,
-    block: Pipeline<Input, Output>.() -> Unit = {},
+public open class PipelineBuilder<Input, Output>
+    internal constructor() : GraphBuilder<Input>() {
+        public val nodeFinish: Node<Output, Output> =
+            object : Node<Output, Output>() {
+                public override val name: CharSequence = FINISH_NODE_PREFIX
+
+                public override suspend fun execute(input: Output): Result<Output> =
+                    Result.success(
+                        value = input,
+                    )
+
+                internal override fun addEdge(edge: Edge<Output, *>): Nothing =
+                    throw GraphConfigurationException(
+                        message = "${this.name} cannot have outgoing edges",
+                    )
+            }
+
+        private companion object {
+            private const val FINISH_NODE_PREFIX: String = "__finish__"
+        }
+    }
+
+public fun <Input, Output> pipeline(
+    name: CharSequence,
+    block: PipelineBuilder<Input, Output>.() -> Unit = {},
 ): Pipeline<Input, Output> {
-    val graphDelegate: Graph<Input> = graph(name)
+    val pipelineBuilder: PipelineBuilder<Input, Output> =
+        PipelineBuilder<Input, Output>()
+            .apply(block)
+    val graphDelegate: Graph<Input> =
+        graph(
+            name = name,
+            block = {},
+        )
     return object : Pipeline<Input, Output>, Graph<Input> by graphDelegate {
-        public override val name: CharSequence = "@pipeline:$name"
-
-        public override val nodeFinish: Node<Output, Output> = nodeFinishOf()
-
         @Suppress("UNCHECKED_CAST")
         public override suspend fun execute(
             input: Input,
             strategy: ExecutionStrategy,
-        ): ExecutionResult<Output> =
+        ): Result<*> =
             graphDelegate
                 .execute(
                     input = input,
                     strategy = strategy,
-                ).map { it as Output }
-    }.apply(block)
+                )
+                .map { it as Output }
+    }
 }

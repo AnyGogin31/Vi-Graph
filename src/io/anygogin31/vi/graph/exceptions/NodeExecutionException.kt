@@ -18,10 +18,13 @@
 
 package io.anygogin31.vi.graph.exceptions
 
-public class NodeExecutionException internal constructor(
+public class NodeExecutionException(
     name: CharSequence,
     cause: Throwable,
 ) : GraphException(
-        message = "Error executing node '$name': ${cause.message}",
+        message =
+            "Error executing node '$name'" +
+                cause
+                    .message,
         cause = cause,
     )

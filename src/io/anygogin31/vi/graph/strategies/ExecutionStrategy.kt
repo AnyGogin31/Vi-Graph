@@ -16,20 +16,6 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package io.anygogin31.vi.graph.executions
+package io.anygogin31.vi.graph.strategies
 
-import io.anygogin31.vi.graph.executions.strategies.ParallelStrategy
-import io.anygogin31.vi.graph.executions.strategies.SequentialStrategy
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.Dispatchers
-
-public sealed interface ExecutionStrategy {
-    public data class Parallel(
-        public override val dispatcher: CoroutineDispatcher = Dispatchers.Default,
-    ) : ParallelStrategy(),
-        ExecutionStrategy
-
-    public data object Sequential :
-        SequentialStrategy(),
-        ExecutionStrategy
-}
+public sealed interface ExecutionStrategy

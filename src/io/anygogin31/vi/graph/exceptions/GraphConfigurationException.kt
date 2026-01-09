@@ -18,6 +18,6 @@
 
 package io.anygogin31.vi.graph.exceptions
 
-public class GraphConfigurationException internal constructor(
+public class GraphConfigurationException(
     message: String,
 ) : GraphException(message)

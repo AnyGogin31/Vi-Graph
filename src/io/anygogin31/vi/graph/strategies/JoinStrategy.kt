@@ -16,15 +16,6 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package io.anygogin31.vi.graph.utils
+package io.anygogin31.vi.graph.strategies
 
-import kotlin.properties.ReadOnlyProperty
-import kotlin.reflect.KProperty
-
-internal fun <T> Lazy<T>.asProperty(): ReadOnlyProperty<Any?, T> =
-    ReadOnlyProperty { thisRef: Any?, property: KProperty<*> ->
-        getValue(
-            thisRef = thisRef,
-            property = property,
-        )
-    }
+public class JoinStrategy private constructor() : ExecutionStrategy

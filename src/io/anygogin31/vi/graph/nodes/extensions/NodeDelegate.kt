@@ -18,28 +18,37 @@
 
 package io.anygogin31.vi.graph.nodes.extensions
 
-import io.anygogin31.vi.graph.Graph
-import io.anygogin31.vi.graph.executions.ExecutionResult
+import io.anygogin31.vi.graph.GraphBuilder
 import io.anygogin31.vi.graph.nodes.Node
-import io.anygogin31.vi.graph.utils.asProperty
 import kotlin.properties.ReadOnlyProperty
+import kotlin.reflect.KProperty
 
-private typealias NodeDelegate<Input, Output> = ReadOnlyProperty<Any?, Node<Input, Output>>
-
-public fun <Input, Output> Graph<*>.node(
-    name: String,
-    execute: suspend (input: Input) -> ExecutionResult<Output>,
-): NodeDelegate<Input, Output> =
-    lazy {
+private class NodeDelegate<Input, Output>(
+    name: CharSequence,
+    execute: suspend (input: Input) -> Result<Output>,
+) : ReadOnlyProperty<Any?, Node<Input, Output>> {
+    private val instance: Node<Input, Output> by lazy {
         object : Node<Input, Output>() {
-            public override val name: CharSequence =
-                name +
-                    NAME_SEPARATOR +
-                    this@node.name
+            public override val name: CharSequence = name
 
-            public override suspend fun execute(input: Input): ExecutionResult<Output> =
+            public override suspend fun execute(input: Input): Result<Output> =
                 execute.invoke(
                     input,
                 )
         }
-    }.asProperty()
+    }
+
+    public override fun getValue(
+        thisRef: Any?,
+        property: KProperty<*>,
+    ): Node<Input, Output> = instance
+}
+
+public fun <Input, Output> GraphBuilder<*>.node(
+    name: CharSequence,
+    execute: suspend (input: Input) -> Result<Output>,
+): ReadOnlyProperty<Any?, Node<Input, Output>> =
+    NodeDelegate(
+        name = name,
+        execute = execute,
+    )

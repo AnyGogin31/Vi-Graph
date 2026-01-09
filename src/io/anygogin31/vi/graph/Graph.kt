@@ -18,49 +18,70 @@
 
 package io.anygogin31.vi.graph
 
-import io.anygogin31.vi.graph.executions.ExecutionResult
-import io.anygogin31.vi.graph.executions.ExecutionStrategy
 import io.anygogin31.vi.graph.nodes.Node
-import io.anygogin31.vi.graph.nodes.nodeStartOf
+import io.anygogin31.vi.graph.strategies.ExecutionStrategy
+import io.anygogin31.vi.graph.strategies.JoinStrategy
+import io.anygogin31.vi.graph.strategies.RaceStrategy
+import io.anygogin31.vi.graph.strategies.SequentialStrategy
 
 public interface Graph<Input> {
     public val name: CharSequence
 
-    public val nodeStart: Node<Input, Input>
-
     public suspend fun execute(
         input: Input,
-        strategy: ExecutionStrategy = ExecutionStrategy.Sequential,
-    ): ExecutionResult<*>
+        strategy: ExecutionStrategy = SequentialStrategy(),
+    ): Result<*>
 }
 
-public fun <Input> graph(
-    name: String,
-    block: Graph<Input>.() -> Unit = {},
-): Graph<Input> =
-    object : Graph<Input> {
-        public override val name: CharSequence = "@graph:$name"
+public open class GraphBuilder<Input>
+    internal constructor() {
+        public val nodeStart: Node<Input, Input> =
+            object : Node<Input, Input>() {
+                public override val name: CharSequence = START_NODE_PREFIX
 
-        public override val nodeStart: Node<Input, Input> = nodeStartOf()
+                public override suspend fun execute(input: Input): Result<Input> =
+                    Result.success(
+                        value = input,
+                    )
+            }
+
+        private companion object {
+            private const val START_NODE_PREFIX: String = "__start__"
+        }
+    }
+
+public fun <Input> graph(
+    name: CharSequence,
+    block: GraphBuilder<Input>.() -> Unit = {},
+): Graph<Input> {
+    val graphBuilder: GraphBuilder<Input> =
+        GraphBuilder<Input>()
+            .apply(block)
+    return object : Graph<Input> {
+        public override val name: CharSequence = name
 
         public override suspend fun execute(
             input: Input,
             strategy: ExecutionStrategy,
-        ): ExecutionResult<*> =
+        ): Result<*> =
             when (strategy) {
-                is ExecutionStrategy.Parallel ->
+                is JoinStrategy -> error(Unit)
+
+                is RaceStrategy ->
                     strategy.run {
-                        executeParallel(
+                        execute(
                             input = input,
-                            dispatcher = strategy.dispatcher,
+                            nodeStart = graphBuilder.nodeStart,
                         )
                     }
 
-                is ExecutionStrategy.Sequential ->
+                is SequentialStrategy ->
                     strategy.run {
-                        executeSequential(
+                        execute(
                             input = input,
+                            nodeStart = graphBuilder.nodeStart,
                         )
                     }
             }
-    }.apply(block)
+    }
+}

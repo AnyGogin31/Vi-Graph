@@ -16,26 +16,28 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package io.anygogin31.vi.graph.executions.strategies
+package io.anygogin31.vi.graph.strategies
 
 import io.anygogin31.vi.graph.Graph
 import io.anygogin31.vi.graph.exceptions.NodeExecutionException
-import io.anygogin31.vi.graph.executions.ExecutionResult
 import io.anygogin31.vi.graph.nodes.Node
 import io.anygogin31.vi.graph.nodes.extensions.ResolvedEdge
 import io.anygogin31.vi.graph.nodes.extensions.resolveEdgesUnsafe
 
-public abstract class SequentialStrategy internal constructor() {
-    internal suspend fun <Input> Graph<*>.executeSequential(input: Input): ExecutionResult<*> {
+public class SequentialStrategy : ExecutionStrategy {
+    internal suspend fun <Input> Graph<*>.execute(
+        input: Input,
+        nodeStart: Node<Input, Input>,
+    ): Result<*> {
         var currentNode: Node<*, *> = nodeStart
         var currentInput: Any? = input
 
-        while (currentInput != null) {
+        while (true) {
             val nodeOutput: Any? =
                 currentNode
                     .executeUnsafe(currentInput)
                     .getOrElse { exception: Throwable ->
-                        return ExecutionResult.failure<Any?>(
+                        return Result.failure<Any?>(
                             NodeExecutionException(
                                 name = currentNode.name,
                                 cause = exception,
@@ -47,12 +49,12 @@ public abstract class SequentialStrategy internal constructor() {
                 currentNode
                     .resolveEdgesUnsafe(nodeOutput)
                     .firstOrNull()
-                    ?: break
+                    ?: return Result.success(
+                        value = nodeOutput,
+                    )
 
             currentNode = resolvedEdge.edge.nodeTo
             currentInput = resolvedEdge.output
         }
-
-        return ExecutionResult.success(currentInput)
     }
 }

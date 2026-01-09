@@ -28,15 +28,15 @@ public data class ResolvedEdge(
 
 public suspend fun <Input, Output> Node<Input, Output>.resolveEdges(output: Output): List<ResolvedEdge> =
     edges
-        .filter { edge: Edge<Output, *> -> edge.condition.invoke(output) }
+        .filter { edge: Edge<Output, *> ->
+            edge
+                .condition
+                .invoke(output)
+        }
         .map { edge: Edge<Output, *> ->
             ResolvedEdge(
                 edge = edge,
-                output =
-                    edge
-                        .transform
-                        .invoke(output)
-                        .getOrNull(),
+                output = output,
             )
         }
 
