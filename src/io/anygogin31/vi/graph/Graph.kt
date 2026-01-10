@@ -58,7 +58,17 @@ public fun <Input> graph(
     val graphBuilder: GraphBuilder<Input> =
         GraphBuilder<Input>()
             .apply(block)
-    return object : Graph<Input> {
+    return graph(
+        name = name,
+        graphBuilder = graphBuilder,
+    )
+}
+
+public fun <Input> graph(
+    name: CharSequence,
+    graphBuilder: GraphBuilder<Input>,
+): Graph<Input> =
+    object : Graph<Input> {
         public override val name: CharSequence = name
 
         public override suspend fun execute(
@@ -71,7 +81,7 @@ public fun <Input> graph(
                         GraphExecutionException(
                             name = name,
                             cause = IllegalStateException("JoinStrategy used on a non-pipeline Graph"),
-                        )
+                        ),
                     )
 
                 is RaceStrategy ->
@@ -91,4 +101,3 @@ public fun <Input> graph(
                     }
             }
     }
-}

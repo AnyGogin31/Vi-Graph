@@ -60,10 +60,20 @@ public fun <Input, Output> pipeline(
     val pipelineBuilder: PipelineBuilder<Input, Output> =
         PipelineBuilder<Input, Output>()
             .apply(block)
+    return pipeline(
+        name = name,
+        pipelineBuilder = pipelineBuilder,
+    )
+}
+
+public fun <Input, Output> pipeline(
+    name: CharSequence,
+    pipelineBuilder: PipelineBuilder<Input, Output>,
+): Pipeline<Input, Output> {
     val graphDelegate: Graph<Input> =
         graph(
             name = name,
-            block = {},
+            graphBuilder = pipelineBuilder,
         )
     return object : Pipeline<Input, Output>, Graph<Input> by graphDelegate {
         @Suppress("UNCHECKED_CAST")
