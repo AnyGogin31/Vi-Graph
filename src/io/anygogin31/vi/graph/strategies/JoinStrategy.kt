@@ -18,4 +18,93 @@
 
 package io.anygogin31.vi.graph.strategies
 
-public class JoinStrategy private constructor() : ExecutionStrategy
+import io.anygogin31.vi.graph.Pipeline
+import io.anygogin31.vi.graph.exceptions.GraphExecutionException
+import io.anygogin31.vi.graph.exceptions.NodeExecutionException
+import io.anygogin31.vi.graph.nodes.Node
+import io.anygogin31.vi.graph.nodes.extensions.ResolvedEdge
+import io.anygogin31.vi.graph.nodes.extensions.resolveEdgesUnsafe
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.getOrElse
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
+
+public class JoinStrategy(
+    private val dispatcher: CoroutineDispatcher = Dispatchers.Default,
+) : ExecutionStrategy {
+    private val resultChannel: Channel<Result<*>> =
+        Channel(
+            capacity = Channel.RENDEZVOUS,
+        )
+
+    internal suspend fun <Input, Output> Pipeline<*, *>.execute(
+        input: Input,
+        nodeStart: Node<Input, Input>,
+        nodeFinish: Node<Output, Output>,
+    ): Result<*> =
+        coroutineScope {
+            launch(dispatcher) {
+                processNode(
+                    currentNode = nodeStart,
+                    currentInput = input,
+                    nodeFinish = nodeFinish,
+                )
+            }
+
+            resultChannel
+                .receiveCatching()
+                .getOrElse { exception: Throwable? ->
+                    return@coroutineScope Result.failure<Any?>(
+                        GraphExecutionException(
+                            name = name,
+                            cause = exception,
+                        ),
+                    )
+                }.also {
+                    resultChannel.close()
+                }
+        }
+
+    private suspend fun processNode(
+        currentNode: Node<*, *>,
+        currentInput: Any?,
+        nodeFinish: Node<*, *>,
+    ): Unit =
+        coroutineScope {
+            val nodeOutput: Any? =
+                currentNode
+                    .executeUnsafe(currentInput)
+                    .getOrElse { exception: Throwable ->
+                        return@coroutineScope resultChannel.send(
+                            Result.failure<Any?>(
+                                NodeExecutionException(
+                                    name = currentNode.name,
+                                    cause = exception,
+                                ),
+                            ),
+                        )
+                    }
+
+            if (currentNode === nodeFinish) {
+                return@coroutineScope resultChannel.send(
+                    Result.success(
+                        value = nodeOutput,
+                    ),
+                )
+            }
+
+            currentNode
+                .resolveEdgesUnsafe(nodeOutput)
+                .forEach { resolvedEdge: ResolvedEdge ->
+                    launch(dispatcher) {
+                        processNode(
+                            currentNode = resolvedEdge.edge.nodeTo,
+                            currentInput = resolvedEdge.output,
+                            nodeFinish = nodeFinish,
+                        )
+                    }
+                }
+        }
+}

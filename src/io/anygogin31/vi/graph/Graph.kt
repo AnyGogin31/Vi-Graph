@@ -18,6 +18,7 @@
 
 package io.anygogin31.vi.graph
 
+import io.anygogin31.vi.graph.exceptions.GraphExecutionException
 import io.anygogin31.vi.graph.nodes.Node
 import io.anygogin31.vi.graph.strategies.ExecutionStrategy
 import io.anygogin31.vi.graph.strategies.JoinStrategy
@@ -65,7 +66,13 @@ public fun <Input> graph(
             strategy: ExecutionStrategy,
         ): Result<*> =
             when (strategy) {
-                is JoinStrategy -> error(Unit)
+                is JoinStrategy ->
+                    Result.failure<Any?>(
+                        GraphExecutionException(
+                            name = name,
+                            cause = IllegalStateException("JoinStrategy used on a non-pipeline Graph"),
+                        )
+                    )
 
                 is RaceStrategy ->
                     strategy.run {

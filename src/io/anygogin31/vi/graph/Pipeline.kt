@@ -22,6 +22,7 @@ import io.anygogin31.vi.graph.edges.Edge
 import io.anygogin31.vi.graph.exceptions.GraphConfigurationException
 import io.anygogin31.vi.graph.nodes.Node
 import io.anygogin31.vi.graph.strategies.ExecutionStrategy
+import io.anygogin31.vi.graph.strategies.JoinStrategy
 
 public interface Pipeline<Input, Output> : Graph<Input> {
     public override suspend fun execute(
@@ -69,12 +70,22 @@ public fun <Input, Output> pipeline(
         public override suspend fun execute(
             input: Input,
             strategy: ExecutionStrategy,
-        ): Result<*> =
-            graphDelegate
-                .execute(
-                    input = input,
-                    strategy = strategy,
-                )
-                .map { it as Output }
+        ): Result<Output> =
+            when (strategy) {
+                is JoinStrategy ->
+                    strategy.run {
+                        execute(
+                            input = input,
+                            nodeStart = pipelineBuilder.nodeStart,
+                            nodeFinish = pipelineBuilder.nodeFinish,
+                        )
+                    }
+
+                else ->
+                    graphDelegate.execute(
+                        input = input,
+                        strategy = strategy,
+                    )
+            }.map { it as Output }
     }
 }
