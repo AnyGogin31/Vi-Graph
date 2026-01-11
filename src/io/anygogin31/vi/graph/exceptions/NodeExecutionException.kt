@@ -23,7 +23,7 @@ public class NodeExecutionException(
     cause: Throwable,
 ) : GraphException(
         message =
-            "Error executing node '$name'" +
+            "Error executing node '$name': " +
                 cause
                     .message,
         cause = cause,
