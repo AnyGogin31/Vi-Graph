@@ -34,7 +34,7 @@ import kotlinx.coroutines.launch
 public class JoinStrategy(
     private val dispatcher: CoroutineDispatcher = Dispatchers.Default,
 ) : ExecutionStrategy {
-    private val resultChannel: Channel<Result<*>> =
+    private val resultChannel: Channel<Result<Any?>> =
         Channel(
             capacity = Channel.RENDEZVOUS,
         )
@@ -43,7 +43,7 @@ public class JoinStrategy(
         input: Input,
         nodeStart: Node<Input, Input>,
         nodeFinish: Node<Output, Output>,
-    ): Result<*> =
+    ): Result<Any?> =
         coroutineScope {
             launch(dispatcher) {
                 processNode(
@@ -56,7 +56,7 @@ public class JoinStrategy(
             resultChannel
                 .receiveCatching()
                 .getOrElse { exception: Throwable? ->
-                    return@coroutineScope Result.failure<Any?>(
+                    return@coroutineScope Result.failure(
                         GraphExecutionException(
                             name = name,
                             cause = exception,
@@ -78,7 +78,7 @@ public class JoinStrategy(
                     .executeUnsafe(currentInput)
                     .getOrElse { exception: Throwable ->
                         return@coroutineScope resultChannel.send(
-                            Result.failure<Any?>(
+                            Result.failure(
                                 NodeExecutionException(
                                     name = currentNode.name,
                                     cause = exception,

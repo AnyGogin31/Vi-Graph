@@ -28,7 +28,7 @@ public interface Pipeline<Input, Output> : Graph<Input> {
     public override suspend fun execute(
         input: Input,
         strategy: ExecutionStrategy,
-    ): Result<*>
+    ): Result<Output>
 }
 
 public open class PipelineBuilder<Input, Output>
@@ -96,6 +96,6 @@ public fun <Input, Output> pipeline(
                         input = input,
                         strategy = strategy,
                     )
-            }.map { it as Output }
+            }.mapCatching { it as Output }
     }
 }

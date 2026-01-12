@@ -31,7 +31,7 @@ public interface Graph<Input> {
     public suspend fun execute(
         input: Input,
         strategy: ExecutionStrategy = SequentialStrategy(),
-    ): Result<*>
+    ): Result<Any?>
 }
 
 public open class GraphBuilder<Input>
@@ -74,10 +74,10 @@ public fun <Input> graph(
         public override suspend fun execute(
             input: Input,
             strategy: ExecutionStrategy,
-        ): Result<*> =
+        ): Result<Any?> =
             when (strategy) {
                 is JoinStrategy ->
-                    Result.failure<Any?>(
+                    Result.failure(
                         GraphExecutionException(
                             name = name,
                             cause = IllegalStateException("JoinStrategy used on a non-pipeline Graph"),

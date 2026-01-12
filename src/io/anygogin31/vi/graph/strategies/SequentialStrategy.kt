@@ -28,7 +28,7 @@ public class SequentialStrategy : ExecutionStrategy {
     internal suspend fun <Input> Graph<*>.execute(
         input: Input,
         nodeStart: Node<Input, Input>,
-    ): Result<*> {
+    ): Result<Any?> {
         var currentNode: Node<*, *> = nodeStart
         var currentInput: Any? = input
 
@@ -37,7 +37,7 @@ public class SequentialStrategy : ExecutionStrategy {
                 currentNode
                     .executeUnsafe(currentInput)
                     .getOrElse { exception: Throwable ->
-                        return Result.failure<Any?>(
+                        return Result.failure(
                             NodeExecutionException(
                                 name = currentNode.name,
                                 cause = exception,

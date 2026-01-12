@@ -35,7 +35,7 @@ import kotlinx.coroutines.launch
 public class RaceStrategy(
     private val dispatcher: CoroutineDispatcher = Dispatchers.Default,
 ) : ExecutionStrategy {
-    private val resultChannel: Channel<Result<*>> =
+    private val resultChannel: Channel<Result<Any?>> =
         Channel(
             capacity = Channel.RENDEZVOUS,
         )
@@ -43,7 +43,7 @@ public class RaceStrategy(
     internal suspend fun <Input> Graph<*>.execute(
         input: Input,
         nodeStart: Node<Input, Input>,
-    ): Result<*> =
+    ): Result<Any?> =
         coroutineScope {
             launch(dispatcher) {
                 processNode(
@@ -55,7 +55,7 @@ public class RaceStrategy(
             resultChannel
                 .receiveCatching()
                 .getOrElse { exception: Throwable? ->
-                    return@coroutineScope Result.failure<Any?>(
+                    return@coroutineScope Result.failure(
                         GraphExecutionException(
                             name = name,
                             cause = exception,
@@ -77,7 +77,7 @@ public class RaceStrategy(
                     .executeUnsafe(currentInput)
                     .getOrElse { exception: Throwable ->
                         return@coroutineScope resultChannel.send(
-                            Result.failure<Any?>(
+                            Result.failure(
                                 NodeExecutionException(
                                     name = currentNode.name,
                                     cause = exception,
