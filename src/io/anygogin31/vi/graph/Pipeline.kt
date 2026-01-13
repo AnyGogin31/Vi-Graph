@@ -66,7 +66,7 @@ public fun <Input, Output> pipeline(
     )
 }
 
-public fun <Input, Output> pipeline(
+internal fun <Input, Output> pipeline(
     name: CharSequence,
     pipelineBuilder: PipelineBuilder<Input, Output>,
 ): Pipeline<Input, Output> {
@@ -81,21 +81,11 @@ public fun <Input, Output> pipeline(
             input: Input,
             strategy: ExecutionStrategy,
         ): Result<Output> =
-            when (strategy) {
-                is JoinStrategy ->
-                    strategy.run {
-                        execute(
-                            input = input,
-                            nodeStart = pipelineBuilder.nodeStart,
-                            nodeFinish = pipelineBuilder.nodeFinish,
-                        )
-                    }
-
-                else ->
-                    graphDelegate.execute(
-                        input = input,
-                        strategy = strategy,
-                    )
-            }.mapCatching { it as Output }
+            graphDelegate
+                .execute(
+                    input = input,
+                    strategy = strategy,
+                )
+                .mapCatching { it as Output }
     }
 }

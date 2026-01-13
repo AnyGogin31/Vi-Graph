@@ -16,14 +16,11 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package io.anygogin31.vi.graph.strategies
+package io.anygogin31.vi.graph.strategies.internal
 
-import io.anygogin31.vi.graph.Graph
 import io.anygogin31.vi.graph.nodes.Node
 
-public sealed interface ExecutionStrategy {
-    public suspend fun <Input> Graph<Input>.execute(
-        input: Input,
-        nodeStart: Node<Input, Input>,
-    ): Result<Any?>
-}
+internal data class GraphStackFrame(
+    internal val node: Node<*, *>,
+    internal val input: Any?,
+)

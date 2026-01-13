@@ -64,7 +64,7 @@ public fun <Input> graph(
     )
 }
 
-public fun <Input> graph(
+internal fun <Input> graph(
     name: CharSequence,
     graphBuilder: GraphBuilder<Input>,
 ): Graph<Input> =
@@ -75,29 +75,10 @@ public fun <Input> graph(
             input: Input,
             strategy: ExecutionStrategy,
         ): Result<Any?> =
-            when (strategy) {
-                is JoinStrategy ->
-                    Result.failure(
-                        GraphExecutionException(
-                            name = name,
-                            cause = IllegalStateException("JoinStrategy used on a non-pipeline Graph"),
-                        ),
-                    )
-
-                is RaceStrategy ->
-                    strategy.run {
-                        execute(
-                            input = input,
-                            nodeStart = graphBuilder.nodeStart,
-                        )
-                    }
-
-                is SequentialStrategy ->
-                    strategy.run {
-                        execute(
-                            input = input,
-                            nodeStart = graphBuilder.nodeStart,
-                        )
-                    }
+            strategy.run {
+                execute(
+                    input = input,
+                    nodeStart = graphBuilder.nodeStart,
+                )
             }
     }

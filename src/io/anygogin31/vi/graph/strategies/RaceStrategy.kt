@@ -24,59 +24,80 @@ import io.anygogin31.vi.graph.exceptions.NodeExecutionException
 import io.anygogin31.vi.graph.nodes.Node
 import io.anygogin31.vi.graph.nodes.extensions.ResolvedEdge
 import io.anygogin31.vi.graph.nodes.extensions.resolveEdgesUnsafe
+import io.anygogin31.vi.graph.strategies.internal.GraphStackFrame
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.cancelChildren
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.getOrElse
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 
 public class RaceStrategy(
-    private val dispatcher: CoroutineDispatcher = Dispatchers.Default,
+    private val coroutineDispatcher: CoroutineDispatcher =
+        Dispatchers.Default,
 ) : ExecutionStrategy {
-    private val resultChannel: Channel<Result<Any?>> =
-        Channel(
-            capacity = Channel.RENDEZVOUS,
-        )
-
-    internal suspend fun <Input> Graph<*>.execute(
+    public override suspend fun <Input> Graph<Input>.execute(
         input: Input,
         nodeStart: Node<Input, Input>,
     ): Result<Any?> =
         coroutineScope {
-            launch(dispatcher) {
-                processNode(
-                    currentNode = nodeStart,
-                    currentInput = input,
+            val resultChannel: Channel<Result<Any?>> =
+                Channel(
+                    capacity = Channel.RENDEZVOUS,
                 )
-            }
 
-            resultChannel
-                .receiveCatching()
-                .getOrElse { exception: Throwable? ->
-                    return@coroutineScope Result.failure(
-                        GraphExecutionException(
-                            name = name,
-                            cause = exception,
-                        ),
+            val processJob: Job =
+                launch(coroutineDispatcher) {
+                    processNode(
+                        input = input,
+                        nodeStart = nodeStart,
+                        resultChannel = resultChannel,
                     )
-                }.also {
-                    coroutineContext.cancelChildren()
-                    resultChannel.close()
                 }
+
+            val result: Result<Any?> =
+                resultChannel
+                    .receiveCatching()
+                    .getOrElse { exception: Throwable? ->
+                        return@coroutineScope Result.failure(
+                            GraphExecutionException(
+                                name = name,
+                                cause = exception,
+                            ),
+                        )
+                    }
+
+            processJob.cancelAndJoin()
+            resultChannel.close()
+
+            return@coroutineScope result
         }
 
     private suspend fun processNode(
-        currentNode: Node<*, *>,
-        currentInput: Any?,
-    ): Unit =
-        coroutineScope {
+        input: Any?,
+        nodeStart: Node<*, *>,
+        resultChannel: Channel<Result<Any?>>,
+    ) {
+        val stack: ArrayDeque<GraphStackFrame> = ArrayDeque()
+        stack.addLast(
+            GraphStackFrame(
+                node = nodeStart,
+                input = input,
+            ),
+        )
+
+        while (stack.isNotEmpty()) {
+            val graphStackFrame: GraphStackFrame = stack.removeLast()
+            val currentNode: Node<*, *> = graphStackFrame.node
+            val currentInput: Any? = graphStackFrame.input
+
             val nodeOutput: Any? =
                 currentNode
                     .executeUnsafe(currentInput)
                     .getOrElse { exception: Throwable ->
-                        return@coroutineScope resultChannel.send(
+                        resultChannel.trySend(
                             Result.failure(
                                 NodeExecutionException(
                                     name = currentNode.name,
@@ -84,24 +105,27 @@ public class RaceStrategy(
                                 ),
                             ),
                         )
+                        return
                     }
 
             currentNode
                 .resolveEdgesUnsafe(nodeOutput)
                 .ifEmpty {
-                    return@coroutineScope resultChannel.send(
+                    resultChannel.trySend(
                         Result.success(
                             value = nodeOutput,
                         ),
                     )
+                    return
                 }
                 .forEach { resolvedEdge: ResolvedEdge ->
-                    launch(dispatcher) {
-                        processNode(
-                            currentNode = resolvedEdge.edge.nodeTo,
-                            currentInput = resolvedEdge.output,
-                        )
-                    }
+                    stack.addLast(
+                        GraphStackFrame(
+                            node = resolvedEdge.edge.nodeTo,
+                            input = resolvedEdge.output,
+                        ),
+                    )
                 }
         }
+    }
 }

@@ -25,14 +25,14 @@ import io.anygogin31.vi.graph.nodes.extensions.ResolvedEdge
 import io.anygogin31.vi.graph.nodes.extensions.resolveEdgesUnsafe
 
 public class SequentialStrategy : ExecutionStrategy {
-    internal suspend fun <Input> Graph<*>.execute(
+    public override suspend fun <Input> Graph<Input>.execute(
         input: Input,
         nodeStart: Node<Input, Input>,
     ): Result<Any?> {
         var currentNode: Node<*, *> = nodeStart
         var currentInput: Any? = input
 
-        while (true) {
+        while (currentInput != null) {
             val nodeOutput: Any? =
                 currentNode
                     .executeUnsafe(currentInput)
@@ -49,12 +49,14 @@ public class SequentialStrategy : ExecutionStrategy {
                 currentNode
                     .resolveEdgesUnsafe(nodeOutput)
                     .firstOrNull()
-                    ?: return Result.success(
-                        value = nodeOutput,
-                    )
+                    ?: break
 
             currentNode = resolvedEdge.edge.nodeTo
             currentInput = resolvedEdge.output
         }
+
+        return Result.success(
+            value = currentInput,
+        )
     }
 }
